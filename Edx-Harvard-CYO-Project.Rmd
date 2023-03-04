@@ -1,0 +1,24 @@
+---
+title: 'TODO: Create Title'
+author: "Josh Fritz"
+date: "2023-03-02"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction - describes the dataset and variables, and summarizes the goal of the project and key steps that were performed.
+
+
+## Methods and Analysis - explains the process and techniques used, including data cleaning, data exploration and visualization, any insights gained, and your modeling approach. At least two different models or algorithms must be used, with at least one being more advanced than linear or logistic regression for prediction problems.
+
+
+## Results - presents the modeling results and discusses the model performance.
+
+
+## Conclusion - gives a brief summary of the report, its potential impact, its limitations, and future work.
+
+
+## References {.unnumbered}
