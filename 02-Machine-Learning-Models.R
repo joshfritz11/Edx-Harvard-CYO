@@ -5,6 +5,7 @@
 if (!require(RSNNS)) install.packages("RSNNS")
 if (!require(randomForest)) install.packages("randomForest")
 if (!require(naivebayes)) install.packages("naivebayes")
+if (!require(evtree)) install.packages("evtree")
 
 
 # Control Models ----
@@ -121,4 +122,14 @@ y_hat_naive_bayes_classifier <- predict(train_naive_bayes_classifier, test_set)
 model_accuracy_results <- model_accuracy_results |> add_row(Method = "Naive Bayes", Accuracy = confusionMatrix(y_hat_naive_bayes_classifier, factor(test_set$Class))$overall[["Accuracy"]])
 
 
-# TODO: Put in the evtree model.
+# evTree Model ----
+control <- trainControl(method = "cv", number = 5)
+
+train_evtree <- train(Class ~ .,
+                      data = train_set,
+                      method = "evtree",
+                      ntrees = 150,
+                      trControl = control)
+
+y_hat_evtree <- predict(train_evtree, test_set)
+confusionMatrix(y_hat_evtree, factor(test_set$Class))
