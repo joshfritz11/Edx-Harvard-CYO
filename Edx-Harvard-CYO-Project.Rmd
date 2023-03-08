@@ -4,10 +4,10 @@ author: "Josh Fritz"
 date: "2023-03-05"
 always_allow_html: true
 output:
+  html_document: default
+  word_document: default
   pdf_document:
     latex_engine: pdflatex
-  word_document: default
-  html_document: default
 bibliography: references.bib
 biblio-style: apalike
 link-citations: yes
@@ -101,6 +101,176 @@ train_set <- Dry_Bean_Dataset[-test_index, ]
 test_set <- Dry_Bean_Dataset[test_index, ]
 ```
 
+Before training models and using them to make predictions, box plots for each of the variables by class were made. From the box plots, it is apparent the Bombay bean is distinct from the others with variables like area, perimeter, major axis length, minor axis length, convex area, and equivalent diameter. To contrast, the other beans' features had regions of overlap with at least one other bean, meaning it is difficult to differentiate these beans with descriptive statistics alone. Figure 1 shows example box plots for variables where Bombay beans are distinct and where they are not.
+```{r Figure 1, message=FALSE, warning=FALSE, echo=FALSE, fig.show="hold", fig.alt="Figure 1: Box plots showing where Bombay beans are distinct and where they are not", fig.cap="Figure 1: Box plots showing where Bombay beans are distinct and where they are not"}
+if (!require(gridExtra)) install.packages("gridExtra")
+library(gridExtra)
+
+AXIS_TEXT_X_ANGLE <- 45
+AXIS_TEXT_VJUST <- 0.5
+
+BoxPlot_Area <- Dry_Bean_Dataset |> ggplot(aes(Class, Area)) +
+    geom_boxplot() +
+    theme_light() + 
+    theme(panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          axis.text.x = element_text(angle = AXIS_TEXT_X_ANGLE, vjust = AXIS_TEXT_VJUST),
+          panel.grid.minor.y = element_blank()) +
+    labs(x = "", y = "Area")
+
+BoxPlot_Perimeter <- Dry_Bean_Dataset |> ggplot(aes(Class, Perimeter)) +
+    geom_boxplot() +
+    theme_light() + 
+    theme(panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          axis.text.x = element_text(angle = AXIS_TEXT_X_ANGLE, vjust = AXIS_TEXT_VJUST),
+          panel.grid.minor.y = element_blank()) +
+    labs(x = "", y = "Perimeter")
+
+BoxPlot_MajorAxisLength <- Dry_Bean_Dataset |> ggplot(aes(Class, MajorAxisLength)) +
+    geom_boxplot() +
+    theme_light() + 
+    theme(panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          axis.text.x = element_text(angle = AXIS_TEXT_X_ANGLE, vjust = AXIS_TEXT_VJUST),
+          panel.grid.minor.y = element_blank()) +
+    labs(x = "", y = "Major Axis Length")
+
+BoxPlot_MinorAxisLength <- Dry_Bean_Dataset |> ggplot(aes(Class, MinorAxisLength)) +
+    geom_boxplot() +
+    theme_light() + 
+    theme(panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          axis.text.x = element_text(angle = AXIS_TEXT_X_ANGLE, vjust = AXIS_TEXT_VJUST),
+          panel.grid.minor.y = element_blank()) +
+    labs(x = "", y = "Minor Axis Length")
+
+BoxPlot_AspectRatio <- Dry_Bean_Dataset |> ggplot(aes(Class, AspectRation)) +
+    geom_boxplot() +
+    theme_light() + 
+    theme(panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          axis.text.x = element_text(angle = AXIS_TEXT_X_ANGLE, vjust = AXIS_TEXT_VJUST),
+          panel.grid.minor.y = element_blank()) +
+    labs(x = "", y = "Aspect Ratio")
+
+BoxPlot_Eccentricity <- Dry_Bean_Dataset |> ggplot(aes(Class, Eccentricity)) +
+    geom_boxplot() +
+    theme_light() + 
+    theme(panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          axis.text.x = element_text(angle = AXIS_TEXT_X_ANGLE, vjust = AXIS_TEXT_VJUST),
+          panel.grid.minor.y = element_blank()) +
+    labs(x = "", y = "Eccentricity")
+
+BoxPlot_ConvexArea <- Dry_Bean_Dataset |> ggplot(aes(Class, ConvexArea)) +
+    geom_boxplot() +
+    theme_light() + 
+    theme(panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          axis.text.x = element_text(angle = AXIS_TEXT_X_ANGLE, vjust = AXIS_TEXT_VJUST),
+          panel.grid.minor.y = element_blank()) +
+    labs(x = "", y = "Convex Area")
+
+BoxPlot_EquivaDiameter <- Dry_Bean_Dataset |> ggplot(aes(Class, EquivDiameter)) +
+    geom_boxplot() +
+    theme_light() + 
+    theme(panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          axis.text.x = element_text(angle = AXIS_TEXT_X_ANGLE, vjust = AXIS_TEXT_VJUST),
+          panel.grid.minor.y = element_blank()) +
+    labs(x = "", y = "Equivalent Diameter")
+
+BoxPlot_Extent <- Dry_Bean_Dataset |> ggplot(aes(Class, Extent)) +
+    geom_boxplot() +
+    theme_light() + 
+    theme(panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          axis.text.x = element_text(angle = AXIS_TEXT_X_ANGLE, vjust = AXIS_TEXT_VJUST),
+          panel.grid.minor.y = element_blank()) +
+    labs(x = "", y = "Extent")
+
+BoxPlot_Solidity <- Dry_Bean_Dataset |> ggplot(aes(Class, Solidity)) +
+    geom_boxplot() +
+    theme_light() + 
+    theme(panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          axis.text.x = element_text(angle = AXIS_TEXT_X_ANGLE, vjust = AXIS_TEXT_VJUST),
+          panel.grid.minor.y = element_blank()) +
+    labs(x = "", y = "Solidity")
+
+BoxPlot_Roundness <- Dry_Bean_Dataset |> ggplot(aes(Class, roundness)) +
+    geom_boxplot() +
+    theme_light() + 
+    theme(panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          axis.text.x = element_text(angle = AXIS_TEXT_X_ANGLE, vjust = AXIS_TEXT_VJUST),
+          panel.grid.minor.y = element_blank()) +
+    labs(x = "", y = "Roundness")
+
+BoxPlot_Compactness <- Dry_Bean_Dataset |> ggplot(aes(Class, Compactness)) +
+    geom_boxplot() +
+    theme_light() + 
+    theme(panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          axis.text.x = element_text(angle = AXIS_TEXT_X_ANGLE, vjust = AXIS_TEXT_VJUST),
+          panel.grid.minor.y = element_blank()) +
+    labs(x = "", y = "Compactness")
+
+BoxPlot_ShapeFactor1 <- Dry_Bean_Dataset |> ggplot(aes(Class, ShapeFactor1)) +
+    geom_boxplot() +
+    theme_light() + 
+    theme(panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          axis.text.x = element_text(angle = AXIS_TEXT_X_ANGLE, vjust = AXIS_TEXT_VJUST),
+          panel.grid.minor.y = element_blank()) +
+    labs(x = "", y = "Shape Factor 1")
+
+BoxPlot_ShapeFactor2 <- Dry_Bean_Dataset |> ggplot(aes(Class, ShapeFactor2)) +
+    geom_boxplot() +
+    theme_light() + 
+    theme(panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          axis.text.x = element_text(angle = AXIS_TEXT_X_ANGLE, vjust = AXIS_TEXT_VJUST),
+          panel.grid.minor.y = element_blank()) +
+    labs(x = "", y = "Shape Factor 2")
+
+BoxPlot_ShapeFactor3 <- Dry_Bean_Dataset |> ggplot(aes(Class, ShapeFactor3)) +
+    geom_boxplot() +
+    theme_light() + 
+    theme(panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          axis.text.x = element_text(angle = AXIS_TEXT_X_ANGLE, vjust = AXIS_TEXT_VJUST),
+          panel.grid.minor.y = element_blank()) +
+    labs(x = "", y = "Shape Factor 3")
+
+BoxPlot_ShapeFactor4 <- Dry_Bean_Dataset |> ggplot(aes(Class, ShapeFactor4)) +
+    geom_boxplot() +
+    theme_light() + 
+    theme(panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          axis.text.x = element_text(angle = AXIS_TEXT_X_ANGLE, vjust = AXIS_TEXT_VJUST),
+          panel.grid.minor.y = element_blank()) +
+    labs(x = "", y = "Shape Factor 4")
+
+# Commented out this code because the output does not look good. However, can be uncommented for viewing as needed.
+# Grob_Layout <- rbind(c(1, 2, 3, 4),
+#                      c(5, 6, 7, 8),
+#                      c(9, 10, 11, 12),
+#                      c(13, 14, 15, 16))
+
+# Grob_Plots <- arrangeGrob(grobs = list(BoxPlot_Area, BoxPlot_Perimeter, BoxPlot_MajorAxisLength, BoxPlot_MinorAxisLength,
+#                                        BoxPlot_AspectRatio, BoxPlot_Eccentricity, BoxPlot_ConvexArea, BoxPlot_EquivaDiameter,
+#                                        BoxPlot_Extent, BoxPlot_Solidity, BoxPlot_Roundness, BoxPlot_Compactness,
+#                                        BoxPlot_ShapeFactor1, BoxPlot_ShapeFactor2, BoxPlot_ShapeFactor3, BoxPlot_ShapeFactor4), layout_matrix = Grob_Layout)
+
+Grob_Layout <- rbind(c(1, 2),
+                     c(3, 4))
+
+Grob_Plots <- arrangeGrob(grobs = list(BoxPlot_Area, BoxPlot_Perimeter,
+                                       BoxPlot_Extent, BoxPlot_Solidity), layout_matrix = Grob_Layout)
+grid.arrange(Grob_Plots)
+```
 
 
 ## Results - presents the modeling results and discusses the model performance.
