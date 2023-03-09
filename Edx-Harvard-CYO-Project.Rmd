@@ -47,29 +47,7 @@ The R programming language has several packages implementing machine learning. F
 The Dry Bean Dataset was developed by Koklu and Ozkan at Selcuk University in Turkey [@koklu2020multiclass]. This dataset was chosen because it has over ten-thousand entries and Koklu and Ozkan implemented four machine learning algorithms for classifying the beans. The algorthims were: multi-layer perceptron (MLP), support vector machine (SVM), k-nearest neighbors (kNN), and decision tree (DT). Because there are published results for different algorithms on this dataset, this project's aim was to implement similar algorithms using the *caret* package and compare the results with the Koklu and Ozkan results.
 
 #### *Dry Bean Dataset Description*
-The Dry Bean Dataset contains 13,611 entries and classifies the entries into one of seven different dry bean types. The seven dry bean types are: barbunya, bombay, cali, dermason, horoz, seker, and sira.
-
-In addition to classifications, it has information about each dry bean's entry in the following variables:
-
-* Area (A): The area of the bean zone and the number of pixels within its boundaries.
-* Perimeter (P): Length of the bean's border.
-* Major axis length (L): The distance of the longest line that can be drawn from a bean.
-* Minor axis length (l): The longest line that can be drawn that is perpendicular to the main axis.
-* Aspect ratio (k): The relationship between L and I as $K = \frac{L}{l}$.
-* Eccentricity (Ec): Eccentricity of the ellipse having the same moments as the region.
-* Convex area (C): Number of pixels in the smallest convex polygon that can contain the area of a bean seed.
-* Equivalent diameter (Ed): The diameter of a circle having the same area as a bean seed area. Written as $d = \sqrt{\frac{4 * A}{\pi}}$.
-* Extent (Ex): The ratio of the pixels in the bounding box to the bean area. Written as $Ex = \frac{A}{A_B}$ where $A_B$ is the area of the bounding rectangle.
-* Solidity (S): The ratio of the pixels in the convex shell to those found in beans. Written as $S = \frac{A}{C}$.
-* Roundness (R): Calculated using $R = \frac{4 \pi A}{p^2}$.
-* Compactness(CO): Measures the roundness of an object as $CO = \frac{Ed}{L}$.
-* Shape Factor 1 (SF1): Calculated as $SF1 = \frac{L}{A}$.
-* Shape Factor 2 (SF2): Calculated as $SF2 = \frac{l}{A}$.
-* Shape Factor 3 (SF3): Calculated as $SF3 = \frac{A}{\frac{L}{2} * \frac{L}{2} * \pi}$.
-* Shape Factor 4 (SF4): Calculated as $SF4 = \frac{A}{\frac{l}{2} * \frac{l}{2} * \pi}$.
-
-## Methods and Analysis - explains the process and techniques used, including data cleaning, data exploration and visualization, any insights gained, and your modeling approach. At least two different models or algorithms must be used, with at least one being more advanced than linear or logistic regression for prediction problems.
-```{r Dry Bean Data Setup, message=FALSE, warning=FALSE, include=FALSE}
+```{r Dry Bean Data Download, message=FALSE, warning=FALSE, include=FALSE}
 if (!require(tidyverse)) install.packages("tidyverse", repos = "http://cran.us.r-project.org")
 if (!require(caret)) install.packages("caret", repos = "http://cran.us.r-project.org")
 
@@ -100,8 +78,43 @@ test_index <- createDataPartition(y = Dry_Bean_Dataset$Class, times = 1, p = 0.1
 train_set <- Dry_Bean_Dataset[-test_index, ]
 test_set <- Dry_Bean_Dataset[test_index, ]
 ```
+The Dry Bean Dataset contains 13,611 entries and classifies the entries into one of seven different dry bean types. The seven dry bean types are: barbunya, bombay, cali, dermason, horoz, seker, and sira. Table 1 shows the observation count for the different types.
 
-Before training models and using them to make predictions, box plots for each of the variables by class were made. From the box plots, it is apparent the Bombay bean is distinct from the others with variables like area, perimeter, major axis length, minor axis length, convex area, and equivalent diameter. To contrast, the other beans' features had regions of overlap with at least one other bean, meaning it is difficult to differentiate these beans with descriptive statistics alone. Figure 1 shows example box plots for variables where Bombay beans are distinct and where they are not.
+```{r Table 1: First five rows of MovieLens data table, message=FALSE, warning=FALSE, echo=FALSE}
+if (!require(kableExtra)) install.packages("kableExtra")
+
+library(kableExtra)
+
+Bean_Type_Count <- Dry_Bean_Dataset %>%
+    group_by(.$Class) %>%
+    summarize(n())
+
+kable_styling(kbl(Bean_Type_Count, booktabs = T, col.names = c("Bean Type", "Count")),
+              latex_options = c("striped", "scale_down", "hold_position")) |>
+  footnote(general = "Table 1: Count of bean types", general_title = "")
+```
+
+In addition to classifications, it has information about each dry bean's entry in the following variables:
+
+* Area (A): The area of the bean zone and the number of pixels within its boundaries.
+* Perimeter (P): Length of the bean's border.
+* Major axis length (L): The distance of the longest line that can be drawn from a bean.
+* Minor axis length (l): The longest line that can be drawn that is perpendicular to the main axis.
+* Aspect ratio (k): The relationship between L and I as $K = \frac{L}{l}$.
+* Eccentricity (Ec): Eccentricity of the ellipse having the same moments as the region.
+* Convex area (C): Number of pixels in the smallest convex polygon that can contain the area of a bean seed.
+* Equivalent diameter (Ed): The diameter of a circle having the same area as a bean seed area. Written as $d = \sqrt{\frac{4 * A}{\pi}}$.
+* Extent (Ex): The ratio of the pixels in the bounding box to the bean area. Written as $Ex = \frac{A}{A_B}$ where $A_B$ is the area of the bounding rectangle.
+* Solidity (S): The ratio of the pixels in the convex shell to those found in beans. Written as $S = \frac{A}{C}$.
+* Roundness (R): Calculated using $R = \frac{4 \pi A}{p^2}$.
+* Compactness(CO): Measures the roundness of an object as $CO = \frac{Ed}{L}$.
+* Shape Factor 1 (SF1): Calculated as $SF1 = \frac{L}{A}$.
+* Shape Factor 2 (SF2): Calculated as $SF2 = \frac{l}{A}$.
+* Shape Factor 3 (SF3): Calculated as $SF3 = \frac{A}{\frac{L}{2} * \frac{L}{2} * \pi}$.
+* Shape Factor 4 (SF4): Calculated as $SF4 = \frac{A}{\frac{l}{2} * \frac{l}{2} * \pi}$.
+
+## Methods and Analysis - explains the process and techniques used, including data cleaning, data exploration and visualization, any insights gained, and your modeling approach. At least two different models or algorithms must be used, with at least one being more advanced than linear or logistic regression for prediction problems.
+Before training models and using them to make predictions, box plots for each variable were made to understand how the bean types differ from each other. From the box plots, it is apparent the Bombay type is distinct from the others with variables like area, perimeter, major axis length, minor axis length, convex area, and equivalent diameter. To contrast, the other bean types had regions of feature overlap with at least one other type, meaning it is difficult to differentiate them with descriptive statistics alone. Figure 1 shows example box plots for variables where Bombay beans are distinct and not distinct from the other types. Also note how other bean types are difficult to classify with these variables.
 ```{r Figure 1, message=FALSE, warning=FALSE, echo=FALSE, fig.show="hold", fig.alt="Figure 1: Box plots showing where Bombay beans are distinct and where they are not", fig.cap="Figure 1: Box plots showing where Bombay beans are distinct and where they are not"}
 if (!require(gridExtra)) install.packages("gridExtra")
 library(gridExtra)
@@ -272,9 +285,107 @@ Grob_Plots <- arrangeGrob(grobs = list(BoxPlot_Area, BoxPlot_Perimeter,
 grid.arrange(Grob_Plots)
 ```
 
+For training and testing models, the Dry Bean Dataset was partitioned into training and test sets using *caret's* `createDataPartition` function. The partition was made with 90% of the data going to the training set while 10% went to the test set. These proportions were chosen because they are similar to the ones used in Koklu and Ozkan paper [@koklu2020multiclass]. However, in their study, they used 10-fold cross-validation instead of partitioning separate training and test sets. This means for every iteration in cross-validation used 90% of the data for training and 10% for testing.
+```{r Dry Bean Training and Test Set Partitioning, message=FALSE, warning=FALSE, include=FALSE}
+# Test set will be 10% of the data.
+set.seed(1, sample.kind = "Rounding") # if using R 3.6 or later
+test_index <- createDataPartition(y = Dry_Bean_Dataset$Class, times = 1, p = 0.1, list = FALSE)
+train_set <- Dry_Bean_Dataset[-test_index, ]
+test_set <- Dry_Bean_Dataset[test_index, ]
+```
+
+The first models created were control models to understand the accuracy of guessing bean types. The models were a random guessing model and a proportional guessing model. The random guessing model randomly assigns a bean type for every row in the test set using R's `sample` function. Although random guesses produce a worst-case model, they do not reflect the proportion of bean types in the training set as shown in figure 2. Therefore the proportional model was made using the training set to reflect its bean type proportions. The proportion model was also made with the `sample` by setting its `prob` parameter to the training set's proportion of bean types. Figure 3 shows how the proportion model's output compares to the proportion of the training set's bean types.
+```{r Control Models, message=FALSE, warning=FALSE, include=FALSE}
+# Random guessing model
+bean_classes <- unique(train_set$Class)
+test_set_length <- length(test_set$Class)
+
+y_hat_random <- tibble(Class = sample(bean_classes, test_set_length, replace = TRUE))
+
+# Proportional guessing model
+bean_proportions <- map_df(bean_classes, function(bean_class){
+    list(Class = bean_class,
+         Proportion = mean(train_set$Class == bean_class))
+})
+
+y_hat_proportion <- tibble(Class = sample(bean_classes, test_set_length, replace = TRUE, prob = bean_proportions$Proportion))
+```
+
+```{r Figure 2, message=FALSE, warning=FALSE, echo=FALSE, fig.align="center", fig.show="hold", out.width="49%", out.height="49%", fig.alt="Figure 2: Comparing distributions between random guessing model and training set. The distributions are not similar.", fig.cap="Figure 2: Comparing distributions between random guessing model and training set. The distributions are not similar."}
+CAPTION_FONT_SIZE <- 12
+
+y_hat_random |> ggplot(aes(Class)) + 
+  geom_bar(color = "black") +
+  theme_light() + 
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        plot.caption = element_text(hjust = 0, size = CAPTION_FONT_SIZE)) + 
+  labs(x = "", y = "Count",
+       caption = "a: Random prediction bean types have uniform distribution")
+
+train_set |> ggplot(aes(Class)) + 
+  geom_bar(color = "black") +
+  theme_light() + 
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        plot.caption = element_text(hjust = 0, size = CAPTION_FONT_SIZE)) + 
+  labs(x = "", y = "Count",
+       caption = "b: Training set bean types do not have a uniform distribution")
+```
+```{r Figure 3, message=FALSE, warning=FALSE, echo=FALSE, fig.align="center", fig.show="hold", out.width="49%", out.height="49%", fig.alt="Figure 3: Comparing distributions between proportional guessing model and train set. The distributions are similar.", fig.cap="Figure 3: Comparing distributions between proportional guessing model and train set. The distributions are similar."}
+y_hat_proportion |> ggplot(aes(Class)) + 
+  geom_bar(color = "black") +
+  theme_light() + 
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        plot.caption = element_text(hjust = 0, size = CAPTION_FONT_SIZE)) + 
+  labs(x = "", y = "Count",
+       caption = "a: Proportional guessing model")
+
+train_set |> ggplot(aes(Class)) + 
+  geom_bar(color = "black") +
+  theme_light() + 
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        plot.caption = element_text(hjust = 0, size = CAPTION_FONT_SIZE)) + 
+  labs(x = "", y = "Count",
+       caption = "b: Training set bean types")
+```
+TODO: Create the models from the Koklu and Ozkan paper. Reference the Machine Learning textbook where possible.
+TODO: Describe the differences in implementing the Caret model versus the Koklu and Ozkan models.
+
+The first machine learning model created was a multi-layer perceptron model. This model is an artificial neural network that is robust to training errors and can be applied to discrete-valued problems [@mitchell2007machine]. It takes inspiration from biology through systems of interconnected neurons. Instead of neurons, it creates an interconnected set of simple units that each take several inputs and produce a single output.
+
+```{r Multi-layer Perceptron Models, message=FALSE, warning=FALSE, include=FALSE}
+# MLP without pre-processing
+control <- trainControl(method = "cv", number = 10)
+
+train_mlp <- train(Class ~ .,
+                   data = train_set,
+                   method = "mlp",
+                   tuneGrid = data.frame(size = seq(1, 5, 1)),
+                   trControl = control)
+
+y_hat_mlp <- predict(train_mlp, test_set)
+
+# MLP with pre-processing
+train_mlp_preprocessing <- train(Class ~ .,
+                                 data = train_set,
+                                 method = "mlp",
+                                 tuneGrid = data.frame(size = seq(1, 11, 2)),
+                                 trControl = control,
+                                 preProcess = c("center", "scale"))
+
+y_hat_mlp_preprocessing <- predict(train_mlp_preprocessing, test_set)
+```
 
 ## Results - presents the modeling results and discusses the model performance.
-
+TODO: Display each model's accuracy.
+TODO: Discuss how the model accuracies differed between the Koklu and Ozkan and my models.
 
 ## Conclusion - gives a brief summary of the report, its potential impact, its limitations, and future work.
 
