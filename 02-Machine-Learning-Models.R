@@ -9,6 +9,7 @@ if (!require(evtree)) install.packages("evtree")
 
 
 # Control Models ----
+# Random guessing model
 bean_classes <- unique(train_set$Class)
 test_set_length <- length(test_set$Class)
 
@@ -20,7 +21,7 @@ y_hat_random |> ggplot(aes(Class)) +
 train_set |> ggplot(aes(Class)) +
     geom_bar()
 
-
+# Proportional guessing model
 bean_proportions <- map_df(bean_classes, function(bean_class){
     list(Class = bean_class,
          Proportion = mean(train_set$Class == bean_class))
