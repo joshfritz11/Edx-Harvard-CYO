@@ -114,6 +114,7 @@ In addition to classifications, it has information about each dry bean's entry i
 * Shape Factor 4 (SF4): Calculated as $SF4 = \frac{A}{\frac{l}{2} * \frac{l}{2} * \pi}$.
 
 ## Methods and Analysis - explains the process and techniques used, including data cleaning, data exploration and visualization, any insights gained, and your modeling approach. At least two different models or algorithms must be used, with at least one being more advanced than linear or logistic regression for prediction problems.
+#### *Data Visualization*
 Before training models and using them to make predictions, box plots for each variable were made to understand how the bean types differ from each other. From the box plots, it is apparent the Bombay type is distinct from the others with variables like area, perimeter, major axis length, minor axis length, convex area, and equivalent diameter. To contrast, the other bean types had regions of feature overlap with at least one other type, meaning it is difficult to differentiate them with descriptive statistics alone. Figure 1 shows example box plots for variables where Bombay beans are distinct and not distinct from the other types. Also note how other bean types are difficult to classify with these variables.
 ```{r Figure 1, message=FALSE, warning=FALSE, echo=FALSE, fig.show="hold", fig.alt="Figure 1: Box plots showing where Bombay beans are distinct and where they are not", fig.cap="Figure 1: Box plots showing where Bombay beans are distinct and where they are not"}
 if (!require(gridExtra)) install.packages("gridExtra")
@@ -284,8 +285,8 @@ Grob_Plots <- arrangeGrob(grobs = list(BoxPlot_Area, BoxPlot_Perimeter,
                                        BoxPlot_Extent, BoxPlot_Solidity), layout_matrix = Grob_Layout)
 grid.arrange(Grob_Plots)
 ```
-
-For training and testing models, the Dry Bean Dataset was partitioned into training and test sets using *caret's* `createDataPartition` function. The partition was made with 90% of the data going to the training set while 10% went to the test set. These proportions were chosen because they are similar to the ones used in Koklu and Ozkan paper [@koklu2020multiclass]. However, in their study, they used 10-fold cross-validation instead of partitioning separate training and test sets. This means for every iteration in cross-validation used 90% of the data for training and 10% for testing.
+#### *Data Partitioning*
+For training and testing models, the Dry Bean Dataset was partitioned into training and test sets using *caret's* `createDataPartition` function. The partition was made with 90% of the data going to the training set while 10% went to the test set. These proportions were chosen because they are similar to the ones used in Koklu and Ozkan study [@koklu2020multiclass]. However, in their study, they used 10-fold cross-validation instead of partitioning separate training and test sets. This means for every iteration in cross-validation used 90% of the data for training and 10% for testing.
 ```{r Dry Bean Training and Test Set Partitioning, message=FALSE, warning=FALSE, include=FALSE}
 # Test set will be 10% of the data.
 set.seed(1, sample.kind = "Rounding") # if using R 3.6 or later
@@ -294,6 +295,7 @@ train_set <- Dry_Bean_Dataset[-test_index, ]
 test_set <- Dry_Bean_Dataset[test_index, ]
 ```
 
+#### *Control Models*
 The first models created were control models to understand the accuracy of guessing bean types. The models were a random guessing model and a proportional guessing model. The random guessing model randomly assigns a bean type for every row in the test set using R's `sample` function. Although random guesses produce a worst-case model, they do not reflect the proportion of bean types in the training set as shown in figure 2. Therefore the proportional model was made using the training set to reflect its bean type proportions. The proportion model was also made with the `sample` by setting its `prob` parameter to the training set's proportion of bean types. Figure 3 shows how the proportion model's output compares to the proportion of the training set's bean types.
 ```{r Control Models, message=FALSE, warning=FALSE, include=FALSE}
 # Random guessing model
@@ -355,12 +357,15 @@ train_set |> ggplot(aes(Class)) +
   labs(x = "", y = "Count",
        caption = "b: Training set bean types")
 ```
-TODO: Create the models from the Koklu and Ozkan paper. Reference the Machine Learning textbook where possible.
-TODO: Describe the differences in implementing the Caret model versus the Koklu and Ozkan models.
+#### *Multi-layer Perceptron Model*
+The first machine learning model created was a multi-layer perceptron model. This model is an artificial neural network that is robust to training errors and can be applied to discrete-valued problems [@mitchellmachine]. It takes inspiration from biology through systems of interconnected neurons. Instead of neurons, it creates an interconnected set of simple units that each take several inputs and produce a single output.
 
-The first machine learning model created was a multi-layer perceptron model. This model is an artificial neural network that is robust to training errors and can be applied to discrete-valued problems [@mitchell2007machine]. It takes inspiration from biology through systems of interconnected neurons. Instead of neurons, it creates an interconnected set of simple units that each take several inputs and produce a single output.
+Training the multi-layer perceptron model was done using the *caret* package's `train` function using the training set. The function was set to learn the class using all the dry bean's variables. The method used was "mlp" from the *RSNNS* package [@mlp]. To improve the model's performance, 10-fold cross-validation was used similar to the Koklu and Ozkan study. Although cross-validation was used there were several parameters that differed from Koklu and Ozkan's study. For example, Koklu and Ozkan specified a hidden layer number of two, while the *caret* model was allowed to set its hidden layer number based on the results of the train function. To do this, the model's `size` parameter was set to try hidden layer numbers from one to five. These numbers were chosen based on the results of the final model. For example, if the final model had a size of five, then the range of sizes would have been increased until a size within the range was selected. Additionally, Koklu and Ozkan's study specified other parameters like hidden layer activation function, learning rate, and performance goal. The *caret* model did not have options for setting these parameters, but the function does set these parameters when it is executed. Further discussion of these parameters is discussed in the results section.
 
+After training the first multi-layer perceptron model, the model's accuracy was lower than expected. To increase the model's accuracy, a second model was made using the *caret* `preProcess` parameter. This parameter was set to center and scale the data before it was used to make predictions. The results of this model are discussed in the results section.
 ```{r Multi-layer Perceptron Models, message=FALSE, warning=FALSE, include=FALSE}
+if (!require(RSNNS)) install.packages("RSNNS")
+
 # MLP without pre-processing
 control <- trainControl(method = "cv", number = 10)
 
@@ -382,6 +387,77 @@ train_mlp_preprocessing <- train(Class ~ .,
 
 y_hat_mlp_preprocessing <- predict(train_mlp_preprocessing, test_set)
 ```
+
+
+#### *Support Vector Machine Model*
+The second model was made with a support vector machine. Building this model was done similar to the multi-layer perceptron model using the *caret* `train` function on the training data with 10-fold cross-validation. Unlike the multi-layer perceptron model, the method used was "svmLinear" from the *kernlab* package [@svm]. Furthermore, the tuning parameter specified was cost, which was set to try values from 10 to 20. Specifying this parameter differed from the Koklu and Ozkan study because they did not specify cost. Instead they specified what type of generalization to use, which was on-vs.-one.
+```{r Support Vector Machine Model, message=FALSE, warning=FALSE, include=FALSE}
+control <- trainControl(method = "cv", number = 10)
+
+train_svm <- train(Class ~ .,
+                   data = train_set,
+                   method = "svmLinear",
+                   tuneGrid = data.frame(C = seq(10, 20, 2)),
+                   trControl = control)
+
+y_hat_svm <- predict(train_svm, test_set)
+```
+
+
+#### *k-Nearest Neighbors Model*
+The third model was made using k-nearest neighbors. This method uses instance-based learning, which stores the training examples in memory without generalizing beyond them [@mitchellmachine]. Generalization occurs when a new instance must be classified. Building this model was similar to the other *caret* models. The method used was "knn" from the *caret* package [@kuhn]. In this case, the tuning parameter was the number of neighbors, which was set to try values between one and five. In the Koklu and Ozkan study, the number of neighbors specified was 10.
+```{r k-Nearest Neighbors Model, message=FALSE, warning=FALSE, include=FALSE}
+control <- trainControl(method = "cv", number = 10)
+
+train_knn <- train(Class ~ .,
+                   data = train_set,
+                   method = "knn",
+                   tuneGrid = data.frame(k = seq(1, 5, 2)),
+                   trControl = control)
+
+y_hat_knn <- predict(train_knn, test_set)
+```
+
+
+#### *Random Forest Model*
+The fourth model made is also the last model to compare with the Koklu and Ozkan study. The Koklu and Ozkan study used a decision tree model, but for this study the *caret* model chosen was a random forest from the *randomForest* package [@randomForest]. Random forest was used because it improves predictions by averaging multiple decision trees [irizarry2022]. For the random forest model, several tuning parameters were specified. First, the number of variables randomly sampled was 1, 5, 10, 25, 50, and 100. Next the number of trees was set to 150. Finally, the size of samples to draw was 5000. To contrast from this study's model, the Koklu and Ozkan study's decision tree model specified a maximum number of partitions as 16. This parameter was not specified in the random forest model.
+```{r Random Forest Model, message=FALSE, warning=FALSE, include=FALSE}
+if (!require(randomForest)) install.packages("randomForest")
+
+control <- trainControl(method = "cv", number = 10)
+grid <- data.frame(mtry = c(1, 5, 10, 25, 50, 100))
+
+train_rf <- train(Class ~ .,
+                  data = train_set,
+                  method = "rf",
+                  ntree = 150,
+                  trControl = control,
+                  tuneGrid = grid,
+                  nsamp = 5000)
+
+y_hat_rf <- predict(train_rf, test_set)
+```
+
+
+#### *Naive Bayes Classifier Model*
+TODO: Create the models from the Koklu and Ozkan paper. Reference the Machine Learning textbook where possible.
+TODO: Describe the differences in implementing the Caret model versus the Koklu and Ozkan models.
+
+The final model made was a naive Bayes classifier.
+
+```{r Naive Bayes Classifier Model, message=FALSE, warning=FALSE, include=FALSE}
+if (!require(naivebayes)) install.packages("naivebayes")
+
+control <- trainControl(method = "cv", number = 10)
+
+train_naive_bayes_classifier <- train(Class ~ .,
+                                      data = train_set,
+                                      method = "naive_bayes",
+                                      trControl = control)
+
+y_hat_naive_bayes_classifier <- predict(train_naive_bayes_classifier, test_set)
+```
+
 
 ## Results - presents the modeling results and discusses the model performance.
 TODO: Display each model's accuracy.
