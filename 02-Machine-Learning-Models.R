@@ -84,7 +84,7 @@ control <- trainControl(method = "cv", number = 10)
 train_knn <- train(Class ~ .,
                    data = train_set,
                    method = "knn",
-                   tuneGrid = data.frame(k = c(1, 3, 5, 7)),
+                   tuneGrid = data.frame(k = seq(1, 5, 2)),
                    trControl = control)
 
 y_hat_knn <- predict(train_knn, test_set)
@@ -94,7 +94,7 @@ ggplot(train_knn)
 
 
 # Random Forest Model ----
-control <- trainControl(method = "cv", number = 5)
+control <- trainControl(method = "cv", number = 10)
 grid <- data.frame(mtry = c(1, 5, 10, 25, 50, 100))
 
 train_rf <- train(Class ~ .,
@@ -124,7 +124,7 @@ model_accuracy_results <- model_accuracy_results |> add_row(Method = "Naive Baye
 
 
 # evTree Model ----
-control <- trainControl(method = "cv", number = 5)
+control <- trainControl(method = "cv", number = 10)
 
 train_evtree <- train(Class ~ .,
                       data = train_set,
