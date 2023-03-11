@@ -34,6 +34,7 @@ header-includes:
 - \usepackage{makecell}
 - \usepackage{xcolor}
 - \usepackage{fvextra}
+- \usepackage[singlelinecheck=false]{caption}
 - \DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,commandchars=\\\{\}}
 ---
 
@@ -80,7 +81,7 @@ test_set <- Dry_Bean_Dataset[test_index, ]
 ```
 The Dry Bean Dataset contains 13,611 entries and classifies the entries into one of seven different dry bean types. The seven dry bean types are: barbunya, bombay, cali, dermason, horoz, seker, and sira. Table 1 shows the observation count for the different types.
 
-```{r Table 1: First five rows of MovieLens data table, message=FALSE, warning=FALSE, echo=FALSE}
+```{r Table 1: Count of bean types, message=FALSE, warning=FALSE, echo=FALSE}
 if (!require(kableExtra)) install.packages("kableExtra")
 
 library(kableExtra)
@@ -113,7 +114,7 @@ In addition to classifications, it has information about each dry bean's entry i
 * Shape Factor 3 (SF3): Calculated as $SF3 = \frac{A}{\frac{L}{2} * \frac{L}{2} * \pi}$.
 * Shape Factor 4 (SF4): Calculated as $SF4 = \frac{A}{\frac{l}{2} * \frac{l}{2} * \pi}$.
 
-## Methods and Analysis - explains the process and techniques used, including data cleaning, data exploration and visualization, any insights gained, and your modeling approach. At least two different models or algorithms must be used, with at least one being more advanced than linear or logistic regression for prediction problems.
+## Methods and Analysis
 #### *Data Visualization*
 Before training models and using them to make predictions, box plots for each variable were made to understand how the bean types differ from each other. From the box plots, it is apparent the Bombay type is distinct from the others with variables like area, perimeter, major axis length, minor axis length, convex area, and equivalent diameter. To contrast, the other bean types had regions of feature overlap with at least one other type, meaning it is difficult to differentiate them with descriptive statistics alone. Figure 1 shows example box plots for variables where Bombay beans are distinct and not distinct from the other types. Also note how other bean types are difficult to classify with these variables.
 ```{r Figure 1, message=FALSE, warning=FALSE, echo=FALSE, fig.show="hold", fig.alt="Figure 1: Box plots showing where Bombay beans are distinct and where they are not", fig.cap="Figure 1: Box plots showing where Bombay beans are distinct and where they are not"}
@@ -363,13 +364,15 @@ The first machine learning model created was a multi-layer perceptron model. Thi
 Training the multi-layer perceptron model was done using the *caret* package's `train` function using the training set. The function was set to learn the class using all the dry bean's variables. The method used was "mlp" from the *RSNNS* package [@mlp]. To improve the model's performance, 10-fold cross-validation was used similar to the Koklu and Ozkan study. Although cross-validation was used there were several parameters that differed from Koklu and Ozkan's study. For example, Koklu and Ozkan specified a hidden layer number of two, while the *caret* model was allowed to set its hidden layer number based on the results of the train function. To do this, the model's `size` parameter was set to try hidden layer numbers from one to five. These numbers were chosen based on the results of the final model. For example, if the final model had a size of five, then the range of sizes would have been increased until a size within the range was selected. Additionally, Koklu and Ozkan's study specified other parameters like hidden layer activation function, learning rate, and performance goal. The *caret* model did not have options for setting these parameters, but the function does set these parameters when it is executed. Further discussion of these parameters is discussed in the results section.
 
 After training the first multi-layer perceptron model, the model's accuracy was lower than expected. To increase the model's accuracy, a second model was made using the *caret* `preProcess` parameter. This parameter was set to center and scale the data before it was used to make predictions. The results of this model are discussed in the results section.
-```{r Multi-layer Perceptron Models, message=FALSE, warning=FALSE, include=FALSE}
+
+The code for both models is shown below:
+```{r Multi-layer Perceptron Models, message=FALSE, warning=FALSE}
 if (!require(RSNNS)) install.packages("RSNNS")
 
 # MLP without pre-processing
 control <- trainControl(method = "cv", number = 10)
 
-train_mlp <- train(Class ~ .,
+train_mlp <- caret::train(Class ~ .,
                    data = train_set,
                    method = "mlp",
                    tuneGrid = data.frame(size = seq(1, 5, 1)),
@@ -378,7 +381,7 @@ train_mlp <- train(Class ~ .,
 y_hat_mlp <- predict(train_mlp, test_set)
 
 # MLP with pre-processing
-train_mlp_preprocessing <- train(Class ~ .,
+train_mlp_preprocessing <- caret::train(Class ~ .,
                                  data = train_set,
                                  method = "mlp",
                                  tuneGrid = data.frame(size = seq(1, 11, 2)),
@@ -390,15 +393,18 @@ y_hat_mlp_preprocessing <- predict(train_mlp_preprocessing, test_set)
 
 
 #### *Support Vector Machine Model*
-The second model was made with a support vector machine. Building this model was done similar to the multi-layer perceptron model using the *caret* `train` function on the training data with 10-fold cross-validation. Unlike the multi-layer perceptron model, the method used was "svmLinear" from the *kernlab* package [@svm]. Furthermore, the tuning parameter specified was cost, which was set to try values from 10 to 20. Specifying this parameter differed from the Koklu and Ozkan study because they did not specify cost. Instead they specified what type of generalization to use, which was on-vs.-one.
-```{r Support Vector Machine Model, message=FALSE, warning=FALSE, include=FALSE}
+The second model was made with a support vector machine. Building this model was done similar to the multi-layer perceptron model using the *caret* `train` function on the training data with 10-fold cross-validation. Unlike the multi-layer perceptron model, the method used was "svmLinear" from the *kernlab* package [@svm]. Furthermore, the tuning parameter specified was cost, which was set to try values from 10 to 20. Specifying this parameter differed from the Koklu and Ozkan study because they did not specify cost. Instead they specified what type of generalization to use, which was on-vs.-one. Finally, the `preProcess` parameter was set to center and scale the data to improve accuracy.
+
+This model's code is shown below:
+```{r Support Vector Machine Model, message=FALSE, warning=FALSE}
 control <- trainControl(method = "cv", number = 10)
 
-train_svm <- train(Class ~ .,
+train_svm <- caret::train(Class ~ .,
                    data = train_set,
                    method = "svmLinear",
                    tuneGrid = data.frame(C = seq(10, 20, 2)),
-                   trControl = control)
+                   trControl = control,
+                   preProcess = c("center", "scale"))
 
 y_hat_svm <- predict(train_svm, test_set)
 ```
@@ -406,14 +412,17 @@ y_hat_svm <- predict(train_svm, test_set)
 
 #### *k-Nearest Neighbors Model*
 The third model was made using k-nearest neighbors. This method uses instance-based learning, which stores the training examples in memory without generalizing beyond them [@mitchellmachine]. Generalization occurs when a new instance must be classified. Building this model was similar to the other *caret* models. The method used was "knn" from the *caret* package [@kuhn]. In this case, the tuning parameter was the number of neighbors, which was set to try values between one and five. In the Koklu and Ozkan study, the number of neighbors specified was 10.
+
+This model's code is shown below:
 ```{r k-Nearest Neighbors Model, message=FALSE, warning=FALSE, include=FALSE}
 control <- trainControl(method = "cv", number = 10)
 
-train_knn <- train(Class ~ .,
+train_knn <- caret::train(Class ~ .,
                    data = train_set,
                    method = "knn",
                    tuneGrid = data.frame(k = seq(1, 5, 2)),
-                   trControl = control)
+                   trControl = control,
+                   preProcess = c("center", "scale"))
 
 y_hat_knn <- predict(train_knn, test_set)
 ```
@@ -421,47 +430,83 @@ y_hat_knn <- predict(train_knn, test_set)
 
 #### *Random Forest Model*
 The fourth model made is also the last model to compare with the Koklu and Ozkan study. The Koklu and Ozkan study used a decision tree model, but for this study the *caret* model chosen was a random forest from the *randomForest* package [@randomForest]. Random forest was used because it improves predictions by averaging multiple decision trees [irizarry2022]. For the random forest model, several tuning parameters were specified. First, the number of variables randomly sampled was 1, 5, 10, 25, 50, and 100. Next the number of trees was set to 150. Finally, the size of samples to draw was 5000. To contrast from this study's model, the Koklu and Ozkan study's decision tree model specified a maximum number of partitions as 16. This parameter was not specified in the random forest model.
+
+This model's code is shown below:
 ```{r Random Forest Model, message=FALSE, warning=FALSE, include=FALSE}
 if (!require(randomForest)) install.packages("randomForest")
 
 control <- trainControl(method = "cv", number = 10)
 grid <- data.frame(mtry = c(1, 5, 10, 25, 50, 100))
 
-train_rf <- train(Class ~ .,
+train_rf <- caret::train(Class ~ .,
                   data = train_set,
                   method = "rf",
                   ntree = 150,
                   trControl = control,
                   tuneGrid = grid,
-                  nsamp = 5000)
+                  nsamp = 5000,
+                  preProcess = c("center", "scale"))
 
 y_hat_rf <- predict(train_rf, test_set)
 ```
 
 
 #### *Naive Bayes Classifier Model*
-TODO: Create the models from the Koklu and Ozkan paper. Reference the Machine Learning textbook where possible.
-TODO: Describe the differences in implementing the Caret model versus the Koklu and Ozkan models.
+The final model made was a naive Bayes classifier. This model was not used in the Koklu and Ozkan study, and was chosen because its performance is competitive with algorithms like decision trees and neural networks [@mitchellmachine]. For this study, the method "naive_bayes" was used from the *naivebayes* package [@naivebayes]. Like the study's other models, 10-fold cross-validation was used, but there were no tuning parameters set. Like the other models, the `preProcess` parameter was set to center and scale the data.
 
-The final model made was a naive Bayes classifier.
-
+This model's code is shown below:
 ```{r Naive Bayes Classifier Model, message=FALSE, warning=FALSE, include=FALSE}
 if (!require(naivebayes)) install.packages("naivebayes")
 
 control <- trainControl(method = "cv", number = 10)
 
-train_naive_bayes_classifier <- train(Class ~ .,
+train_naive_bayes_classifier <- caret::train(Class ~ .,
                                       data = train_set,
                                       method = "naive_bayes",
-                                      trControl = control)
+                                      trControl = control,
+                                      preProcess = c("center", "scale"))
 
 y_hat_naive_bayes_classifier <- predict(train_naive_bayes_classifier, test_set)
 ```
 
 
 ## Results - presents the modeling results and discusses the model performance.
-TODO: Display each model's accuracy.
-TODO: Discuss how the model accuracies differed between the Koklu and Ozkan and my models.
+```{r Results of all models, message=FALSE, warning=FALSE, include=FALSE}
+# Build tibble of results for Koklu and Ozkan study and this study.
+model_accuracy_results <- tibble(Method = "Random Model", "Koklu and Ozkan Study Accuracy (%)" = "N/A", 
+                                 "Caret Model Accuracy (%)" = caret::confusionMatrix(factor(y_hat_random$Class), factor(test_set$Class))$overall[["Accuracy"]] * 100)
+model_accuracy_results <- model_accuracy_results |> add_row(Method = "Proportion Model", "Koklu and Ozkan Study Accuracy (%)" = "N/A",
+                                                            "Caret Model Accuracy (%)" = caret::confusionMatrix(factor(y_hat_proportion$Class), factor(test_set$Class))$overall[["Accuracy"]] * 100)
+model_accuracy_results <- model_accuracy_results |> add_row(Method = "Multi-layer Perceptron", "Koklu and Ozkan Study Accuracy (%)" = "91.73", 
+                                                            "Caret Model Accuracy (%)" = caret::confusionMatrix(y_hat_mlp, factor(test_set$Class))$overall[["Accuracy"]] * 100)
+model_accuracy_results <- model_accuracy_results |> add_row(Method = "Multi-layer Perceptron + Pre-processing", "Koklu and Ozkan Study Accuracy (%)" = "91.73",
+                                                            "Caret Model Accuracy (%)" = caret::confusionMatrix(y_hat_mlp_preprocessing, factor(test_set$Class))$overall[["Accuracy"]] * 100)
+model_accuracy_results <- model_accuracy_results |> add_row(Method = "Support Vector Machine", "Koklu and Ozkan Study Accuracy (%)" = "93.13", 
+                                                            "Caret Model Accuracy (%)" = caret::confusionMatrix(y_hat_svm, factor(test_set$Class))$overall[["Accuracy"]] * 100)
+model_accuracy_results <- model_accuracy_results |> add_row(Method = "knn", "Koklu and Ozkan Study Accuracy (%)" = "92.52",
+                                                            "Caret Model Accuracy (%)" = caret::confusionMatrix(y_hat_knn, factor(test_set$Class))$overall[["Accuracy"]] * 100)
+model_accuracy_results <- model_accuracy_results |> add_row(Method = "Random Forest",  "Koklu and Ozkan Study Accuracy (%)" = "87.92",
+                                                            "Caret Model Accuracy (%)" = caret::confusionMatrix(y_hat_rf, factor(test_set$Class))$overall[["Accuracy"]] * 100)
+model_accuracy_results <- model_accuracy_results |> add_row(Method = "Naive Bayes", "Koklu and Ozkan Study Accuracy (%)" = "N/A",
+                                                            "Caret Model Accuracy (%)" = caret::confusionMatrix(y_hat_naive_bayes_classifier, factor(test_set$Class))$overall[["Accuracy"]] * 100)
+```
+Each model's accuracy was calculated using the *caret* package's `confusionMatrix` function. Table 2 compares each model's accuracy results between the Koklu and Ozkan models and the *caret* models.
+
+```{r Table 2: Model accuracy results, message=FALSE, warning=FALSE, echo=FALSE}
+kable_styling(kbl(model_accuracy_results, booktabs = T, digits = 2, align = "lll"),
+              latex_options = c("striped", "hold_position")) |>
+  footnote(general = "Table 2: Model accuracy results", general_title = "")
+```
+
+All the models had higher accuracies than the control models, which is expected. Most of the Koklu and Ozkan models had better accuracies than the *caret* models, with the exception of the random forest model. The random forest model may have performed better because the algorithm created several decision trees and averaged the results, while the Koklu and Ozkan study only used a single decision tree. For the naive Bayes model, this model didn't perform as well as any of the Koklu and Ozkan models, however it was only off from the other models by less than five percent. This is interesting because the Bayes model is not as sophisticated as the other machine learning models and performed a little worse than them.
+
+For the multi-layer perceptron model without pre-processing, the model's accuracy was much lower than expected. Table 3 shows this model's confusion matrix. When looking at the confusion matrix, its clear the model predicted Dermason for every item in the test set. It is unclear why this model chose Dermason while the multi-layer perceptron model with pre-processing did not.
+```{r Table 3: Multi-layer perceptron confusion matrix, message=FALSE, warning=FALSE, echo=FALSE}
+mlp_table <- caret::confusionMatrix(y_hat_mlp, factor(test_set$Class))$table
+kable_styling(kbl(mlp_table, booktabs = T, digits = 2)) |>
+  footnote(general = "Table 3: Multi-layer perceptron confusion matrix", general_title = "")
+```
+
 
 ## Conclusion - gives a brief summary of the report, its potential impact, its limitations, and future work.
 
