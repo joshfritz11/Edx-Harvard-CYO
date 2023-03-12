@@ -1,13 +1,13 @@
 ---
 title: 'Understanding the Benefits and Limitations of the *Caret* Package using the UCI Dry Bean Dataset'
 author: "Josh Fritz"
-date: "2023-03-05"
+date: "2023-03-12"
 always_allow_html: true
 output:
   html_document: default
-  word_document: default
   pdf_document:
     latex_engine: pdflatex
+  word_document: default
 bibliography: references.bib
 biblio-style: apalike
 link-citations: yes
@@ -43,9 +43,9 @@ knitr::opts_chunk$set(echo = TRUE, tidy.ops=list(width.cutoff=60), tidy=TRUE)
 ```
 
 ## Introduction
-The R programming language has several packages implementing machine learning. For linear regression alone, there are *logicFS*, *lars*, and *monomvn* to name a few [@kuhn]. Consequentially each package has different functions for training models and making predictions. To simplify these differences, the *caret* package has standardized training and predicting functions. Although *caret* standardizes machine learning functions, this simplification also prevents users from specifying parameters present in the algorithm's original package. For example, for training a multi-layer perceptron (MLP) model, the *caret* package has one tuning parameter `size` for specifying the number of units in the hidden layer. To contrast, the same algorithm initialized from the *RSNNS* package has several tuning parameters [@mlp]. The goal of this project was to better understand the benefits and limitations of the *caret* package using the UCI Dry Bean Dataset.
+The R programming language has several packages implementing machine learning. For linear regression alone, there are *logicFS*, *lars*, *monomvn*, and others [@kuhn]. Consequentially each package has distinct functions for training models and making predictions. To simplify these distinctions, the *caret* package has standard training and predicting functions. Although *caret* standardizes machine learning functions, this simplification also prevents users from specifying parameters present in the algorithm's original package. For example, for training a multi-layer perceptron model, the *caret* package has one tuning parameter, `size`, for specifying the number of units in the hidden layer. To contrast, the same algorithm initialized from the *RSNNS* package has several tuning parameters [@mlp]. The goal of this project was to better understand the benefits and limitations of the *caret* package using the Dry Bean Dataset from the University of California Irvine.
 
-The Dry Bean Dataset was developed by Koklu and Ozkan at Selcuk University in Turkey [@koklu2020multiclass]. This dataset was chosen because it has over ten-thousand entries and Koklu and Ozkan implemented four machine learning algorithms for classifying the beans. The algorthims were: multi-layer perceptron (MLP), support vector machine (SVM), k-nearest neighbors (kNN), and decision tree (DT). Because there are published results for different algorithms on this dataset, this project's aim was to implement similar algorithms using the *caret* package and compare the results with the Koklu and Ozkan results.
+The Dry Bean Dataset was developed by Murat Koklu and Ilker Ali Ozkan at Selcuk University in Turkey [@koklu2020multiclass]. This dataset was chosen because it has over ten-thousand entries and Koklu and Ozkan's study implemented four machine learning algorithms for classifying the beans. The algorthims were multi-layer perceptron, support vector machine, k-nearest neighbors, and decision tree. Because there are published results for different algorithms on this dataset, this project's aim was to implement similar algorithms using the *caret* package and compare the results.
 
 #### *Dry Bean Dataset Description*
 ```{r Dry Bean Data Download, message=FALSE, warning=FALSE, include=FALSE}
@@ -79,7 +79,7 @@ test_index <- createDataPartition(y = Dry_Bean_Dataset$Class, times = 1, p = 0.1
 train_set <- Dry_Bean_Dataset[-test_index, ]
 test_set <- Dry_Bean_Dataset[test_index, ]
 ```
-The Dry Bean Dataset contains 13,611 entries and classifies the entries into one of seven different dry bean types. The seven dry bean types are: barbunya, bombay, cali, dermason, horoz, seker, and sira. Table 1 shows the observation count for the different types.
+The Dry Bean Dataset contains 13,611 entries and classifies the entries into one of seven dry bean types. The dry bean types are barbunya, bombay, cali, dermason, horoz, seker, and sira. Table 1 shows the observation count for the distinct types.
 
 ```{r Table 1: Count of bean types, message=FALSE, warning=FALSE, echo=FALSE}
 if (!require(kableExtra)) install.packages("kableExtra")
@@ -91,11 +91,11 @@ Bean_Type_Count <- Dry_Bean_Dataset %>%
     summarize(n())
 
 kable_styling(kbl(Bean_Type_Count, booktabs = T, col.names = c("Bean Type", "Count")),
-              latex_options = c("striped", "scale_down", "hold_position")) |>
+              latex_options = c("striped", "hold_position")) |>
   footnote(general = "Table 1: Count of bean types", general_title = "")
 ```
 
-In addition to classifications, it has information about each dry bean's entry in the following variables:
+In addition to classifications, it has information about each dry bean's characteristics in the following variables:
 
 * Area (A): The area of the bean zone and the number of pixels within its boundaries.
 * Perimeter (P): Length of the bean's border.
@@ -108,7 +108,7 @@ In addition to classifications, it has information about each dry bean's entry i
 * Extent (Ex): The ratio of the pixels in the bounding box to the bean area. Written as $Ex = \frac{A}{A_B}$ where $A_B$ is the area of the bounding rectangle.
 * Solidity (S): The ratio of the pixels in the convex shell to those found in beans. Written as $S = \frac{A}{C}$.
 * Roundness (R): Calculated using $R = \frac{4 \pi A}{p^2}$.
-* Compactness(CO): Measures the roundness of an object as $CO = \frac{Ed}{L}$.
+* Compactness (CO): Measures the roundness of an object as $CO = \frac{Ed}{L}$.
 * Shape Factor 1 (SF1): Calculated as $SF1 = \frac{L}{A}$.
 * Shape Factor 2 (SF2): Calculated as $SF2 = \frac{l}{A}$.
 * Shape Factor 3 (SF3): Calculated as $SF3 = \frac{A}{\frac{L}{2} * \frac{L}{2} * \pi}$.
@@ -287,7 +287,7 @@ Grob_Plots <- arrangeGrob(grobs = list(BoxPlot_Area, BoxPlot_Perimeter,
 grid.arrange(Grob_Plots)
 ```
 #### *Data Partitioning*
-For training and testing models, the Dry Bean Dataset was partitioned into training and test sets using *caret's* `createDataPartition` function. The partition was made with 90% of the data going to the training set while 10% went to the test set. These proportions were chosen because they are similar to the ones used in Koklu and Ozkan study [@koklu2020multiclass]. However, in their study, they used 10-fold cross-validation instead of partitioning separate training and test sets. This means for every iteration in cross-validation used 90% of the data for training and 10% for testing.
+For training and testing models, the Dry Bean Dataset was partitioned into training and test sets using *caret's* `createDataPartition` function. The partition was made with 90% of the data going to the training set while 10% went to the test set. These proportions were chosen because they are like the ones used in Koklu and Ozkan study [@koklu2020multiclass]. However, in their study they used 10-fold cross-validation instead of partitioning separate training and test sets. This means for every iteration in cross-validation used 90% of the data for training and 10% for testing.
 ```{r Dry Bean Training and Test Set Partitioning, message=FALSE, warning=FALSE, include=FALSE}
 # Test set will be 10% of the data.
 set.seed(1, sample.kind = "Rounding") # if using R 3.6 or later
@@ -297,7 +297,7 @@ test_set <- Dry_Bean_Dataset[test_index, ]
 ```
 
 #### *Control Models*
-The first models created were control models to understand the accuracy of guessing bean types. The models were a random guessing model and a proportional guessing model. The random guessing model randomly assigns a bean type for every row in the test set using R's `sample` function. Although random guesses produce a worst-case model, they do not reflect the proportion of bean types in the training set as shown in figure 2. Therefore the proportional model was made using the training set to reflect its bean type proportions. The proportion model was also made with the `sample` by setting its `prob` parameter to the training set's proportion of bean types. Figure 3 shows how the proportion model's output compares to the proportion of the training set's bean types.
+The first models created were control models to understand the accuracy of guessing bean types. The models were a random guessing model and a proportional guessing model. The random guessing model randomly assigns a bean type for every row in the test set using R's `sample` function. Although random guesses produce a worst-case model, they do not reflect the proportion of bean types in the training set as shown in figure 2. Therefore, the proportional model was made using the training set to reflect its bean type proportions. The proportion model was also made with the `sample` by setting its `prob` parameter to the training set's proportion of bean types. Figure 3 shows how the proportion model's output compares to the proportion of the training set's bean types.
 ```{r Control Models, message=FALSE, warning=FALSE, include=FALSE}
 # Random guessing model
 bean_classes <- unique(train_set$Class)
@@ -359,9 +359,9 @@ train_set |> ggplot(aes(Class)) +
        caption = "b: Training set bean types")
 ```
 #### *Multi-layer Perceptron Model*
-The first machine learning model created was a multi-layer perceptron model. This model is an artificial neural network that is robust to training errors and can be applied to discrete-valued problems [@mitchellmachine]. It takes inspiration from biology through systems of interconnected neurons. Instead of neurons, it creates an interconnected set of simple units that each take several inputs and produce a single output.
+The first machine learning model created was a multi-layer perceptron model. This model is an artificial neural network that is robust to training errors and can be applied to discrete-valued problems [@mitchellmachine]. It takes inspiration from biology through systems of interconnected neurons. However, instead of neurons it creates an interconnected set of simple units that each take several inputs and produce a single output.
 
-Training the multi-layer perceptron model was done using the *caret* package's `train` function using the training set. The function was set to learn the class using all the dry bean's variables. The method used was "mlp" from the *RSNNS* package [@mlp]. To improve the model's performance, 10-fold cross-validation was used similar to the Koklu and Ozkan study. Although cross-validation was used there were several parameters that differed from Koklu and Ozkan's study. For example, Koklu and Ozkan specified a hidden layer number of two, while the *caret* model was allowed to set its hidden layer number based on the results of the train function. To do this, the model's `size` parameter was set to try hidden layer numbers from one to five. These numbers were chosen based on the results of the final model. For example, if the final model had a size of five, then the range of sizes would have been increased until a size within the range was selected. Additionally, Koklu and Ozkan's study specified other parameters like hidden layer activation function, learning rate, and performance goal. The *caret* model did not have options for setting these parameters, but the function does set these parameters when it is executed. Further discussion of these parameters is discussed in the results section.
+Training the multi-layer perceptron model was done using the *caret* package's `train` function using the training set. The function was set to learn the class using all the dry bean's variables. The method used was "mlp" from the *RSNNS* package [@mlp]. To improve the model's performance, 10-fold cross-validation was used like the Koklu and Ozkan study. Although cross-validation was used there were several parameters that differed from Koklu and Ozkan's study. For example, Koklu and Ozkan specified a hidden layer number of two, while the *caret* model was allowed to set its hidden layer number based on the results of the train function. To do this, the model's `size` parameter was set to try hidden layer numbers from one to five. These numbers were chosen based on the model's results. For example, if the model had a size of five (i.e., the maximum number selected), then the range of sizes would have been increased until a size within the range was selected. Additionally, Koklu and Ozkan's study specified other parameters like hidden layer activation function, learning rate, and performance goal. The *caret* model did not have options for setting these parameters, but the function does set these parameters when it is executed.
 
 After training the first multi-layer perceptron model, the model's accuracy was lower than expected. To increase the model's accuracy, a second model was made using the *caret* `preProcess` parameter. This parameter was set to center and scale the data before it was used to make predictions. The results of this model are discussed in the results section.
 
@@ -393,7 +393,7 @@ y_hat_mlp_preprocessing <- predict(train_mlp_preprocessing, test_set)
 
 
 #### *Support Vector Machine Model*
-The second model was made with a support vector machine. Building this model was done similar to the multi-layer perceptron model using the *caret* `train` function on the training data with 10-fold cross-validation. Unlike the multi-layer perceptron model, the method used was "svmLinear" from the *kernlab* package [@svm]. Furthermore, the tuning parameter specified was cost, which was set to try values from 10 to 20. Specifying this parameter differed from the Koklu and Ozkan study because they did not specify cost. Instead they specified what type of generalization to use, which was on-vs.-one. Finally, the `preProcess` parameter was set to center and scale the data to improve accuracy.
+The second model was made with a support vector machine. Building this model was done like the multi-layer perceptron model using the *caret* `train` function on the training data with 10-fold cross-validation. Unlike the multi-layer perceptron model, the method used was "svmLinear" from the *kernlab* package [@svm]. Furthermore, the tuning parameter specified was cost, which was set to try values from 35 to 40. Specifying this parameter differed from the Koklu and Ozkan study because they did not specify cost. Instead, they specified what type of generalization to use, which was one-vs.-one. Finally, the `preProcess` parameter was set to center and scale the data to improve accuracy.
 
 This model's code is shown below:
 ```{r Support Vector Machine Model, message=FALSE, warning=FALSE}
@@ -402,7 +402,7 @@ control <- trainControl(method = "cv", number = 10)
 train_svm <- caret::train(Class ~ .,
                    data = train_set,
                    method = "svmLinear",
-                   tuneGrid = data.frame(C = seq(10, 20, 2)),
+                   tuneGrid = data.frame(C = seq(35, 40, 1)),
                    trControl = control,
                    preProcess = c("center", "scale"))
 
@@ -411,16 +411,16 @@ y_hat_svm <- predict(train_svm, test_set)
 
 
 #### *k-Nearest Neighbors Model*
-The third model was made using k-nearest neighbors. This method uses instance-based learning, which stores the training examples in memory without generalizing beyond them [@mitchellmachine]. Generalization occurs when a new instance must be classified. Building this model was similar to the other *caret* models. The method used was "knn" from the *caret* package [@kuhn]. In this case, the tuning parameter was the number of neighbors, which was set to try values between one and five. In the Koklu and Ozkan study, the number of neighbors specified was 10.
+The third model was made using k-nearest neighbors. This method uses instance-based learning, which stores the training examples in memory without generalizing beyond them [@mitchellmachine]. Generalization occurs when a new instance must be classified. Building this model was like the other *caret* models. The method used was "knn" from the *caret* package [@kuhn]. In this case, the tuning parameter was the number of neighbors, which was set to try values between 10 and 15. In the Koklu and Ozkan study, the number of neighbors specified was thirteen.
 
 This model's code is shown below:
-```{r k-Nearest Neighbors Model, message=FALSE, warning=FALSE, include=FALSE}
+```{r k-Nearest Neighbors Model, message=FALSE, warning=FALSE}
 control <- trainControl(method = "cv", number = 10)
 
 train_knn <- caret::train(Class ~ .,
                    data = train_set,
                    method = "knn",
-                   tuneGrid = data.frame(k = seq(1, 5, 2)),
+                   tuneGrid = data.frame(k = seq(10, 15, 1)),
                    trControl = control,
                    preProcess = c("center", "scale"))
 
@@ -429,10 +429,10 @@ y_hat_knn <- predict(train_knn, test_set)
 
 
 #### *Random Forest Model*
-The fourth model made is also the last model to compare with the Koklu and Ozkan study. The Koklu and Ozkan study used a decision tree model, but for this study the *caret* model chosen was a random forest from the *randomForest* package [@randomForest]. Random forest was used because it improves predictions by averaging multiple decision trees [irizarry2022]. For the random forest model, several tuning parameters were specified. First, the number of variables randomly sampled was 1, 5, 10, 25, 50, and 100. Next the number of trees was set to 150. Finally, the size of samples to draw was 5000. To contrast from this study's model, the Koklu and Ozkan study's decision tree model specified a maximum number of partitions as 16. This parameter was not specified in the random forest model.
+The fourth model made is also the last model to compare with the Koklu and Ozkan study. The Koklu and Ozkan study used a decision tree model, but for this study the *caret* model chosen was a random forest from the *randomForest* package [@randomForest]. Random forest was used because it improves predictions by averaging multiple decision trees [@irizarry2022]. For the random forest model, several tuning parameters were specified. First, the number of variables randomly sampled was 1, 5, 10, 25, 50, and 100. Next the number of trees was set to 150. Finally, the size of samples to draw was five thousand. To contrast from this study's model, the Koklu and Ozkan study's decision tree model specified a maximum number of partitions as sixteen. This parameter could not be specified in the random forest model.
 
 This model's code is shown below:
-```{r Random Forest Model, message=FALSE, warning=FALSE, include=FALSE}
+```{r Random Forest Model, message=FALSE, warning=FALSE}
 if (!require(randomForest)) install.packages("randomForest")
 
 control <- trainControl(method = "cv", number = 10)
@@ -452,10 +452,10 @@ y_hat_rf <- predict(train_rf, test_set)
 
 
 #### *Naive Bayes Classifier Model*
-The final model made was a naive Bayes classifier. This model was not used in the Koklu and Ozkan study, and was chosen because its performance is competitive with algorithms like decision trees and neural networks [@mitchellmachine]. For this study, the method "naive_bayes" was used from the *naivebayes* package [@naivebayes]. Like the study's other models, 10-fold cross-validation was used, but there were no tuning parameters set. Like the other models, the `preProcess` parameter was set to center and scale the data.
+The final model made was a naive Bayes classifier. This model was not used in the Koklu and Ozkan study, but was chosen because its performance is competitive with algorithms like decision trees and neural networks [@mitchellmachine]. For this study, the method "naive_bayes" was used from the *naivebayes* package [@naivebayes]. Like the study's other models, 10-fold cross-validation was used, but no tuning parameters were set. Also like the other models, the `preProcess` parameter was set to center and scale the data.
 
 This model's code is shown below:
-```{r Naive Bayes Classifier Model, message=FALSE, warning=FALSE, include=FALSE}
+```{r Naive Bayes Classifier Model, message=FALSE, warning=FALSE}
 if (!require(naivebayes)) install.packages("naivebayes")
 
 control <- trainControl(method = "cv", number = 10)
@@ -470,7 +470,7 @@ y_hat_naive_bayes_classifier <- predict(train_naive_bayes_classifier, test_set)
 ```
 
 
-## Results - presents the modeling results and discusses the model performance.
+## Results
 ```{r Results of all models, message=FALSE, warning=FALSE, include=FALSE}
 # Build tibble of results for Koklu and Ozkan study and this study.
 model_accuracy_results <- tibble(Method = "Random Model", "Koklu and Ozkan Study Accuracy (%)" = "N/A", 
@@ -494,21 +494,19 @@ Each model's accuracy was calculated using the *caret* package's `confusionMatri
 
 ```{r Table 2: Model accuracy results, message=FALSE, warning=FALSE, echo=FALSE}
 kable_styling(kbl(model_accuracy_results, booktabs = T, digits = 2, align = "lll"),
-              latex_options = c("striped", "hold_position")) |>
+              latex_options = c("striped", "hold_position", "scale_down")) |>
   footnote(general = "Table 2: Model accuracy results", general_title = "")
 ```
 
-All the models had higher accuracies than the control models, which is expected. Most of the Koklu and Ozkan models had better accuracies than the *caret* models, with the exception of the random forest model. The random forest model may have performed better because the algorithm created several decision trees and averaged the results, while the Koklu and Ozkan study only used a single decision tree. For the naive Bayes model, this model didn't perform as well as any of the Koklu and Ozkan models, however it was only off from the other models by less than five percent. This is interesting because the Bayes model is not as sophisticated as the other machine learning models and performed a little worse than them.
+All the models had higher accuracies than the control models, which is expected. Most of the Koklu and Ozkan models had better accuracies than the *caret* models with the exceptions of the multi-layer perceptron with pre-processing and random forest models. The random forest model may have performed better because the algorithm created several decision trees and averaged the results, while the Koklu and Ozkan study only used a single decision tree. For the naive Bayes model, this model did not perform as well as any of the Koklu and Ozkan models, however it was only off from the other models by less than five percent. This is interesting because the Bayes model is not as sophisticated as the other machine learning models and performed almost as well as them.
 
-For the multi-layer perceptron model without pre-processing, the model's accuracy was much lower than expected. Table 3 shows this model's confusion matrix. When looking at the confusion matrix, its clear the model predicted Dermason for every item in the test set. It is unclear why this model chose Dermason while the multi-layer perceptron model with pre-processing did not.
+For the multi-layer perceptron model without pre-processing, the model's accuracy was much lower than expected. Table 3 shows this model's confusion matrix. From the confusion matrix, it is clear the model predicted Dermason for every item in the test set, but it is unclear why this model chose Dermason while the multi-layer perceptron model with pre-processing did not.
 ```{r Table 3: Multi-layer perceptron confusion matrix, message=FALSE, warning=FALSE, echo=FALSE}
 mlp_table <- caret::confusionMatrix(y_hat_mlp, factor(test_set$Class))$table
 kable_styling(kbl(mlp_table, booktabs = T, digits = 2)) |>
   footnote(general = "Table 3: Multi-layer perceptron confusion matrix", general_title = "")
 ```
-
-
-## Conclusion - gives a brief summary of the report, its potential impact, its limitations, and future work.
-
+## Conclusion
+The R programming language has several packages implementing machine learning and each package has distinct functions for training and predicting. In this study, the *caret* package was used to understand its benefits and limitations compared to the various machine learning packages. The benefits of using the *caret* package include using the same functions for training models and making predictions, automatically finding the best model by setting tuning parameters' ranges, and using functions like `confusionMatrix` to evaluate each model's performance. To contrast, one limitation of the *caret* package includes not being able to set all tuning parameters offered by the original machine learning package. Despite this limitation, the *caret* package offers tools for prototyping and comparing several machine learning models quickly. This means a model could be chosen among many, and then implemented using the original machine learning package and fine-tuning the model's parameters. Further study is needed to understand how fine-tuning a model compares with using the *caret* package alone. Furthermore, it is not known how a *caret* model performance compares with non-caret models when larger datasets are used.
 
 ## References {.unnumbered}
