@@ -1,12 +1,12 @@
 ---
 title: 'Understanding the Benefits and Limitations of the *Caret* Package using the UCI Dry Bean Dataset'
 author: "Josh Fritz"
-date: "2023-03-12"
+date: "2023-03-13"
 always_allow_html: true
 output:
-  word_document: default
   pdf_document:
     latex_engine: pdflatex
+  word_document: default
   html_document: default
 bibliography: references.bib
 biblio-style: apalike
@@ -72,12 +72,6 @@ if (!file.exists(Dry_Bean_Dataset_file))
 Dry_Bean_Dataset <- readxl::read_xlsx(Dry_Bean_Dataset_file,
           col_names = TRUE,
           trim_ws = TRUE)
-
-# Test set will be 10% of the data.
-set.seed(1, sample.kind = "Rounding") # if using R 3.6 or later
-test_index <- createDataPartition(y = Dry_Bean_Dataset$Class, times = 1, p = 0.1, list = FALSE)
-train_set <- Dry_Bean_Dataset[-test_index, ]
-test_set <- Dry_Bean_Dataset[test_index, ]
 ```
 The Dry Bean Dataset contains 13,611 entries and classifies the entries into one of seven dry bean types. The dry bean types are Barbunya, Bombay, Cali, Dermason, Horoz, Seker, and Sira. Table 1 shows the observation count for the distinct types.
 
@@ -297,7 +291,7 @@ test_set <- Dry_Bean_Dataset[test_index, ]
 ```
 
 #### *Control Models*
-The first models created were control models to understand the accuracy of guessing bean types. The models were a random guessing model and a proportional guessing model. The random guessing model randomly assigns a bean type for every row in the test set using R's `sample` function. Although random guesses produce a worst-case model, they do not reflect the proportion of bean types in the training set as shown in figure 2. Therefore, the proportional model was made using the training set to reflect its bean type proportions. The proportion model was also made with the `sample` by setting its `prob` parameter to the training set's proportion of bean types. Figure 3 shows how the proportion model's output compares to the proportion of the training set's bean types.
+The first models created were control models to understand the accuracy of guessing bean types. The models were a random guessing model and a proportional guessing model. The random guessing model randomly assigns a bean type for every row in the test set using R's `sample` function. Although random guesses produce a worst-case model, they do not reflect the proportion of bean types in the training set as shown in figure 2. Therefore, the proportional model was made using the training set to reflect its bean type proportions. The proportion model was also made with `sample` by setting its `prob` parameter to the training set's proportion of bean types. Figure 3 shows how the proportion model's output compares to the proportion of the training set's bean types.
 ```{r Control Models, message=FALSE, warning=FALSE, include=FALSE}
 # Random guessing model
 bean_classes <- unique(train_set$Class)
@@ -415,7 +409,7 @@ y_hat_svm <- predict(train_svm, test_set)
 
 
 #### *k-Nearest Neighbors Model*
-The third model was made using k-nearest neighbors. This method uses instance-based learning, which stores the training examples in memory without generalizing beyond them [@mitchellmachine]. Generalization occurs when a new instance must be classified. Building this model was like the other *caret* models. The method used was "knn" from the *caret* package [@kuhn]. In this case, the tuning parameter was the number of neighbors, which was set to try values between ten and fifteen. In the Koklu and Ozkan study, the number of neighbors specified was thirteen.
+The third model was made using k-nearest neighbors. This method uses instance-based learning, which stores the training examples in memory without generalizing beyond them [@mitchellmachine]. Generalization occurs when a new instance must be classified. Building this model was like the other *caret* models. The method used was "knn" from the *caret* package [@kuhn] and the tuning parameter was the number of neighbors, which was set to try values between ten and fifteen. In the Koklu and Ozkan study, the number of neighbors specified was thirteen.
 
 This model's code is shown below:
 ```{r k-Nearest Neighbors Model, message=FALSE, warning=FALSE}
@@ -456,7 +450,7 @@ y_hat_rf <- predict(train_rf, test_set)
 
 
 #### *Naive Bayes Classifier Model*
-The final model made was a naive Bayes classifier. This model was not used in the Koklu and Ozkan study, but was chosen because its performance is competitive with algorithms like decision trees and neural networks [@mitchellmachine]. For this study, the method "naive_bayes" was used from the *naivebayes* package [@naivebayes]. Like the study's other models, 10-fold cross-validation was used, but no tuning parameters were set. Also like the other models, the `preProcess` parameter was set to center and scale the data.
+The final model made was a naive Bayes classifier. This model was not used in the Koklu and Ozkan study but was chosen because its performance is competitive with algorithms like decision trees and neural networks [@mitchellmachine]. For this study, the method "naive_bayes" was used from the *naivebayes* package [@naivebayes]. Like the study's other models, 10-fold cross-validation was used, but no tuning parameters were set. Also like the other models, the `preProcess` parameter was set to center and scale the data.
 
 This model's code is shown below:
 ```{r Naive Bayes Classifier Model, message=FALSE, warning=FALSE}
@@ -511,6 +505,6 @@ kable_styling(kbl(mlp_table, booktabs = T, digits = 2)) |>
   footnote(general = "Table 3: Multi-layer perceptron confusion matrix", general_title = "")
 ```
 ## Conclusion
-The R programming language has several packages implementing machine learning and each package has distinct functions for training and predicting. In this study, the *caret* package was used to understand its benefits and limitations compared to the various machine learning packages. The benefits of using the *caret* package include using the same functions for training models and making predictions, automatically finding the best model by setting tuning parameters' ranges, and using functions like `confusionMatrix` to evaluate each model's performance. To contrast, one limitation of the *caret* package includes not being able to set all tuning parameters offered by the original machine learning package. Despite this limitation, the *caret* package offers tools for prototyping and comparing several machine learning models quickly. This means a model could be chosen among many, and then implemented using the original machine learning package and fine-tuning the model's parameters. Further study is needed to understand how fine-tuning a model compares with using the *caret* package alone. Furthermore, it is not known how a *caret* model performance compares with non-caret models when larger datasets are used.
+The R programming language has several packages implementing machine learning and each package has distinct functions for training and predicting. In this study, the *caret* package was used to understand its benefits and limitations compared to the various machine learning packages. The benefits of using the *caret* package include using the same functions for training models and making predictions, automatically finding the best model by setting tuning parameters' ranges, and using functions like `confusionMatrix` to evaluate each model's performance. To contrast, one limitation of the *caret* package includes not being able to set all tuning parameters offered by the original machine learning package. Despite this limitation, the *caret* package offers tools for prototyping and comparing several machine learning models quickly. This means a model could be chosen among many, and then implemented using the original machine learning package and fine-tuning the model's parameters. Further study is needed to understand how fine-tuning a model compares with using the *caret* package alone. Furthermore, it is not known how a *caret* model's performance compares with non-caret models when larger datasets are used.
 
 ## References {.unnumbered}
